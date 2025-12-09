@@ -111,13 +111,16 @@ cd "$PROJECT_PATH"
 
 
 print_info "Verifying Git file integrity..."
-if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
+if [ -d ".git" ]; then
 	if [ -n "$(git config user.name)" ] && ! $(git remote get-url > /dev/null 2>&1); then
 		RMT="https://github.com/"$(git config user.name)"/${PROJECT_NAME}.git"
 		git remote add origin $RMT
-	else
-		git remote remove origin
+	fi
+
+	if ! git ls-remote --exit-code origin > /dev/null 2>&1; then
 		print_info "Ditemukan remote tidak valid:"
+		print_info "$(git remote get-url origin)"
+		git remote remove origin
 		print_info "Remote 'origin' yang tidak valid telah dihapus."
 
 	fi
