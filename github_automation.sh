@@ -109,71 +109,93 @@ fi
 
 cd "$PROJECT_PATH"
 
+delete_repo() {
+	local remote=$(git remote get-url origin)
+	local tmp=${remote#*https://github.com/}
+	local usr_repo=${tmp%.git}
 
-print_info "Verifying Git file integrity..."
-if [ -d ".git" ]; then
-	if [ -n "$(git config user.name)" ] && ! $(git remote get-url > /dev/null 2>&1); then
-		RMT="https://github.com/"$(git config user.name)"/${PROJECT_NAME}.git"
-		git remote add origin $RMT
+	print_info "Target hapus: $usr_repo"
+
+	gh repo delete "$usr_repo" --yes
+}
+
+github_automation() {
+	print_info "Verifying Git file integrity..."
+	if [ -d ".git" ]; then
+		if [ -n "$(git config user.name)" ] && ! git remote get-url origin > /dev/null 2>&1; then
+			RMT="https://github.com/$(git config user.name)/${PROJECT_NAME}.git"
+			git remote add origin $RMT
+		fi
+
+		if ! git ls-remote --exit-code origin > /dev/null 2>&1; then
+			print_info "Ditemukan remote tidak valid:"
+			print_info "$(git remote get-url origin)"
+			git remote remove origin
+			print_info "Remote 'origin' yang tidak valid telah dihapus."
+
+		fi
 	fi
 
-	if ! git ls-remote --exit-code origin > /dev/null 2>&1; then
-		print_info "Ditemukan remote tidak valid:"
-		print_info "$(git remote get-url origin)"
-		git remote remove origin
-		print_info "Remote 'origin' yang tidak valid telah dihapus."
+	HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
 
-	fi
-fi
+	if [[ "$HAS_REMOTE" == "none" ]]; then
+		# BLOK CREATE REPO GITHUB
+		print_header "SETUP REPO BARU"
+		[[ ! -d ".git" ]] && git init 2>/dev/null && git branch -M main
 
-HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
+		print_prompt " Pesan commit awal: "
+		read COMMIT
+		git add -A && git commit -m "${COMMIT:-chore: initial commit}" --allow-empty
 
-if [[ "$HAS_REMOTE" == "none" ]]; then
-	# BLOK CREATE REPO GITHUB
-	print_header "SETUP REPO BARU"
-	[[ ! -d ".git" ]] && git init 2>/dev/null && git branch -M main
+		echo -e "${GREEN}\n  ${BOLD}[1] Public\n  [2] Private${NC}"
+		print_prompt "Visibility repo (default 1): "
+		read CHOICE
+		if [[ "$CHOICE" == "2" ]]; then
+			VISIBILITY="--private"
+		else
+			VISIBILITY="--public"
+		fi
 
-	print_prompt " Pesan commit awal: "
-	read COMMIT
-	git add -A && git commit -m "${COMMIT:-chore: initial commit}" --allow-empty
-
-	echo -e "${GREEN}\n  ${BOLD}[1] Public\n  [2] Private${NC}"
-	print_prompt "Visibility repo (default 1): "
-	read CHOICE
-	if [[ "$CHOICE" == "2" ]]; then
-		VISIBILITY="--private"
-	else
-		VISIBILITY="--public"
-	fi
-
-	print_info "Membuat repositori github untuk $PROJECT_NAME..."
-	if gh repo create "$PROJECT_NAME" $VISIBILITY --source=. --remote=origin --push; then
-		print_success "Repositori berhasil dibuat!"
-		gh browse
-	fi
-else
-	# BLOK PUSH
-	print_header "PUSH PROJECT"
-	print_info "Target: $HAS_REMOTE"
-	echo ""
-
-	print_prompt "Masukkan pesan commit: "
-	read COMMIT
-
-	git add -A
-	git branch -M "main"
-	if git commit -m "${COMMIT:-chore: production update $(date +'%Y-%m-%d')}"; then
-		echo ""
-		print_info "Mengirim data ke GitHub..." 
-		if git push origin "$(git branch --show-current)"; then
-			print_success "Project berhasil dipush."
+		print_info "Membuat repositori github untuk $PROJECT_NAME..."
+		if gh repo create "$PROJECT_NAME" $VISIBILITY --source=. --remote=origin --push; then
+			print_success "Repositori berhasil dibuat!"
 			gh browse
 		fi
 	else
-		print_info "Tidak ada perubahan yang ditemukan."
+		# BLOK PUSH
+		print_header "PUSH PROJECT"
+		print_info "Target: $HAS_REMOTE"
+		echo ""
+
+		print_prompt "Masukkan pesan commit: "
+		read COMMIT
+
+		git add -A
+		git branch -M "main"
+		if git commit -m "${COMMIT:-chore: production update $(date +'%Y-%m-%d')}"; then
+			echo ""
+			print_info "Mengirim data ke GitHub..." 
+			if git push origin "$(git branch --show-current)"; then
+				print_success "Project berhasil dipush."
+				gh browse
+			fi
+		else
+			print_info "Tidak ada perubahan yang ditemukan."
+		fi
 	fi
-fi
 
-echo ""
-cd "$ORIGINAL_DIR"
+	echo ""
+	cd "$ORIGINAL_DIR"
+}
 
+
+# print_prompt "  [1] buat dan push repo local\n"
+# print_prompt "  [2] hapus repo di github\n"
+# print_prompt "default 1. pilih: "
+# read pilih 
+#
+# if [[ "$pilih" == "2" ]]; then
+# 	delete_repo
+# else
+	github_automation
+# fi
