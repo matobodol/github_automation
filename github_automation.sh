@@ -110,12 +110,17 @@ cd "$PROJECT_PATH"
 
 print_info "Verifying Git file integrity..."
 if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
-  git remote remove origin
-  RMT_NOTVALID=$(git remote get-url origin 2>/dev/null)
-  print_info "ditemukan remote tidak valid: $RMT_NOTVALID"
-  print_info "Remote 'origin' yang tidak valid telah dihapus."
+	REMOTE_NOTVALID=$(git remote get-url origin 2>/dev/null)
+	git remote remove origin
+	print_info "ditemukan remote tidak valid: $REMOTE_NOTVALID"
+	print_info "Remote 'origin' yang tidak valid telah dihapus."
 fi
+
 HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
+
+# print_info "Project telah terkonfigurasi dengan remote 'origin' yang terhubung ke github"
+# print_prompt "Lanjut untuk Push? [y/n]: "
+# read CONFIRM
 
 if [[ "$HAS_REMOTE" == "none" ]]; then
 	# BLOK CREATE REPO GITHUB
