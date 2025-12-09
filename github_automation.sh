@@ -118,10 +118,6 @@ fi
 
 HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
 
-# print_info "Project telah terkonfigurasi dengan remote 'origin' yang terhubung ke github"
-# print_prompt "Lanjut untuk Push? [y/n]: "
-# read CONFIRM
-
 if [[ "$HAS_REMOTE" == "none" ]]; then
 	# BLOK CREATE REPO GITHUB
 	print_header "SETUP REPO BARU"
