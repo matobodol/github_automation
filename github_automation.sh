@@ -109,16 +109,21 @@ fi
 
 cd "$PROJECT_PATH"
 
-	# echo $(git remote add origin https://github.com/$(git config user.name)/${PROJECT_NAME}.git)
-HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
 
 print_info "Verifying Git file integrity..."
 if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
-	git remote remove origin
-	print_info "Ditemukan remote tidak valid:"
-	print_info "Remote 'origin' yang tidak valid telah dihapus."
+	if [ -n "$(git config user.name)" ] && ! $(git remote get-url > /dev/null 2>&1); then
+		RMT="https://github.com/"$(git config user.name)"/${PROJECT_NAME}.git"
+		git remote add origin $RMT
+	else
+		git remote remove origin
+		print_info "Ditemukan remote tidak valid:"
+		print_info "Remote 'origin' yang tidak valid telah dihapus."
+
+	fi
 fi
 
+HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
 
 if [[ "$HAS_REMOTE" == "none" ]]; then
 	# BLOK CREATE REPO GITHUB
