@@ -109,15 +109,14 @@ fi
 
 cd "$PROJECT_PATH"
 
+	# echo $(git remote add origin https://github.com/$(git config user.name)/${PROJECT_NAME}.git)
+HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
+
 print_info "Verifying Git file integrity..."
 if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
-	HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
-	if ! [[ "$REMOTE_INVALID" == "none" ]]; then
 	git remote remove origin
 	print_info "Ditemukan remote tidak valid:"
-	print_info "$REMOTE_INVALID"
 	print_info "Remote 'origin' yang tidak valid telah dihapus."
-	fi
 fi
 
 
