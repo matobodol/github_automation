@@ -108,7 +108,12 @@ fi
 
 cd "$PROJECT_PATH"
 
+print_info "Verifying Git file integrity..."
 HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
+if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
+  git remote remove origin
+  print_info "Remote 'origin' yang tidak valid telah dihapus."
+fi
 
 if [[ "$HAS_REMOTE" == "none" ]]; then
 	# BLOK CREATE REPO GITHUB
