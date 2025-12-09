@@ -57,7 +57,8 @@ fi
 
 # PENGECEKAN INSTALASI (gh terpasang?)
 if ! command -v gh &> /dev/null; then
-	print_error "Membutuhkan paket GitHub CLI (gh)."
+	print_header "Installing paket..."
+	print_error "Paket GitHub CLI (gh) tidak ditemukan!"
 	print_info "Silakan install melalui https://cli.github.com/ atau paket manager system.\n"
 	print_info "Debian : sudo apt install gh"
 	print_info "Fedora : sudo yum install gh"
@@ -66,7 +67,6 @@ if ! command -v gh &> /dev/null; then
 	print_prompt "Command paket manager: "
 	read PKG
 
-	print_header "Installing paket..."
 	hasil=$($PKG || echo "none")
 	if [[ "$hasil" == "none" ]]; then
 		print_error "Install paket github CLI (gh) gagal!"
@@ -84,6 +84,7 @@ if ! gh auth status &> /dev/null; then
 fi
 
 # Memindai daftar project
+print_header "Penyiapkan lingkungan"
 print_info "Memindai daftar project yang tersedia..."
 PROJECT_LIST=$(ls -d */ 2>/dev/null | cut -f1 -d'/' || echo "")
 
@@ -110,13 +111,15 @@ cd "$PROJECT_PATH"
 
 print_info "Verifying Git file integrity..."
 if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
-	REMOTE_NOTVALID=$(git remote get-url origin 2>/dev/null)
+	HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
+	if ! [[ "$REMOTE_INVALID" == "none" ]]; then
 	git remote remove origin
-	print_info "Ditemukan remote tidak valid: $REMOTE_NOTVALID"
+	print_info "Ditemukan remote tidak valid:"
+	print_info "$REMOTE_INVALID"
 	print_info "Remote 'origin' yang tidak valid telah dihapus."
+	fi
 fi
 
-HAS_REMOTE=$(git remote get-url origin 2>/dev/null || echo "none")
 
 if [[ "$HAS_REMOTE" == "none" ]]; then
 	# BLOK CREATE REPO GITHUB
