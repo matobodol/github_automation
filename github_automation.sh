@@ -50,7 +50,7 @@ print_comment
 
 # PENGECEKAN INTERNET
 if ! ping -c 1 -W 2 8.8.8.8 &> /dev/null; then
-	print_error "Koneksi internet tidak terhubung."
+	print_error "Tidak ada koneksi internet."
 	print_info "Harap sambungkan perangkat ke internet untuk sinkronisasi GitHub."
 	exit 1
 fi
@@ -119,13 +119,13 @@ if [[ "$HAS_REMOTE" == "none" ]]; then
 	read COMMIT
 	git add -A && git commit -m "${COMMIT:-chore: initial commit}" --allow-empty
 
-	echo -e "\t${BOLD}[1] Public\n\t[2] Private${NC}"
-	print_prompt "Visibility repo (default 2): "
+	echo -e "${GREEN}\n   ${BOLD}[1] Public\n   [2] Private${NC}"
+	print_prompt "Visibility repo (default 1): "
 	read CHOICE
-	if [[ "$CHOICE" == "1" ]]; then
-		VISIBILITY="--public"
-	else
+	if [[ "$CHOICE" == "2" ]]; then
 		VISIBILITY="--private"
+	else
+		VISIBILITY="--public"
 	fi
 
 	print_info "Membuat repositori github untuk $PROJECT_NAME..."
