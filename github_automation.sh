@@ -51,15 +51,14 @@ print_comment
 # PENGECEKAN INTERNET
 if ! ping -c 1 -W 2 8.8.8.8 &> /dev/null; then
 	print_error "Tidak ada koneksi internet."
-	print_info "Harap sambungkan perangkat ke internet untuk sinkronisasi GitHub."
+	print_info "Memerlukan koneksi internet untuk sinkronisasi GitHub."
 	exit 1
 fi
 
 # PENGECEKAN INSTALASI (gh terpasang?)
 if ! command -v gh &> /dev/null; then
 	print_error "Membutuhkan paket GitHub CLI (gh)."
-	print_info "Silakan install melalui https://cli.github.com/ atau paket manager system."
-	echo ""
+	print_info "Silakan install melalui https://cli.github.com/ atau paket manager system.\n"
 	print_info "Debian : sudo apt install gh"
 	print_info "Fedora : sudo yum install gh"
 	print_info "Arch   : sudo pacman -S github-cli"
@@ -68,7 +67,8 @@ if ! command -v gh &> /dev/null; then
 	read PKG
 
 	print_header "Installing paket..."
-	if ! [[ $($PKG) ]]; then
+	hasil=$($PKG || echo "none")
+	if [[ "$hasil" == "none" ]]; then
 		print_error "Install paket github CLI (gh) gagal!"
 		exit 1
 	else
@@ -112,7 +112,7 @@ print_info "Verifying Git file integrity..."
 if [ -d ".git" ] && ! git ls-remote --exit-code origin > /dev/null 2>&1; then
 	REMOTE_NOTVALID=$(git remote get-url origin 2>/dev/null)
 	git remote remove origin
-	print_info "ditemukan remote tidak valid: $REMOTE_NOTVALID"
+	print_info "Ditemukan remote tidak valid: $REMOTE_NOTVALID"
 	print_info "Remote 'origin' yang tidak valid telah dihapus."
 fi
 
@@ -127,7 +127,7 @@ if [[ "$HAS_REMOTE" == "none" ]]; then
 	read COMMIT
 	git add -A && git commit -m "${COMMIT:-chore: initial commit}" --allow-empty
 
-	echo -e "${GREEN}\n   ${BOLD}[1] Public\n   [2] Private${NC}"
+	echo -e "${GREEN}\n  ${BOLD}[1] Public\n  [2] Private${NC}"
 	print_prompt "Visibility repo (default 1): "
 	read CHOICE
 	if [[ "$CHOICE" == "2" ]]; then
