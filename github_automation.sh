@@ -83,6 +83,17 @@ if ! gh auth status &> /dev/null; then
 	gh auth login
 fi
 
+if ! [[ -f "$HOME/.gitconfig" ]]; then
+	print_prompt "username github: "
+	read -r USERNAME
+	git config --global user.name "$USERNAME"
+	print_prompt "email github: "
+	read -r EMAIL 
+	git config --global user.email "$EMAIL"
+
+	print_info "setup gitconfig sukses."
+fi
+
 # Memindai daftar project
 print_header "Penyiapkan lingkungan"
 print_info "Memindai daftar project yang tersedia..."
@@ -124,7 +135,7 @@ github_automation() {
 	if [ -d ".git" ]; then
 		if [ -n "$(git config user.name)" ] && ! git remote get-url origin > /dev/null 2>&1; then
 			RMT="https://github.com/$(git config user.name)/${PROJECT_NAME}.git"
-			git remote add origin $RMT
+			git remote add origin "$RMT"
 		fi
 
 		if ! git ls-remote --exit-code origin > /dev/null 2>&1; then
@@ -144,7 +155,7 @@ github_automation() {
 		[[ ! -d ".git" ]] && git init 2>/dev/null && git branch -M main
 
 		print_prompt " Pesan commit awal: "
-		read COMMIT
+		read -r COMMIT
 		git add -A && git commit -m "${COMMIT:-chore: initial commit}" --allow-empty
 
 		echo -e "${GREEN}\n  ${BOLD}[1] Public\n  [2] Private${NC}"
