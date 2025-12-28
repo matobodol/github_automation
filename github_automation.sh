@@ -43,7 +43,7 @@ print_prompt() {
 # --- Persiapan Lingkungan ---
 ORIGINAL_DIR=$(pwd)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" || exit
 
 print_header "GITHUB AUTOMATION"
 print_comment
@@ -65,7 +65,7 @@ if ! command -v gh &> /dev/null; then
 	print_info "Arch   : sudo pacman -S github-cli"
 	print_info "Termux : pkg install gh\n"
 	print_prompt "Command paket manager: "
-	read PKG
+	read -r PKG
 
 	hasil=$($PKG || echo "none")
 	if [[ "$hasil" == "none" ]]; then
@@ -77,21 +77,24 @@ if ! command -v gh &> /dev/null; then
 fi
 
 # PENGECEKAN LOGIN (Sesi aktif?)
-if ! gh auth status &> /dev/null; then
-	print_info "Sesi gh auth login atau sudah kadaluwarsa."
-	print_prompt "Setup gh auth login login..."
-	gh auth login
-fi
-
-if ! [[ -f "$HOME/.gitconfig" ]]; then
+if ! git config user.name &> /dev/null; then
 	print_prompt "username github: "
 	read -r USERNAME
 	git config --global user.name "$USERNAME"
+fi
+
+if ! git config user.email &> /dev/null; then
 	print_prompt "email github: "
 	read -r EMAIL 
 	git config --global user.email "$EMAIL"
 
-	print_info "setup gitconfig sukses."
+fi
+
+if ! gh auth status &> /dev/null; then
+	print_info "Sesi gh auth login atau sudah kadaluwarsa."
+	print_prompt "Setup gh auth login login..."
+	gh auth login
+	print_info "setup gh auth login & gitconfig sukses."
 fi
 
 # Memindai daftar project
@@ -111,23 +114,29 @@ echo -e "${GREEN}${BOLD}$PROJECT_LIST${NC}"
 echo ""
 
 print_prompt "Masukkan nama folder project: "
-read PROJECT_NAME
+read -r PROJECT_NAME
 
 PROJECT_PATH="${SCRIPT_DIR}/${PROJECT_NAME}"
 if [[ -z "$PROJECT_NAME" || ! -d "$PROJECT_PATH" ]]; then
 	print_error "Project '$PROJECT_NAME' tidak ditemukan."; exit 1
 fi
 
-cd "$PROJECT_PATH"
+cd "$PROJECT_PATH" || exit
 
 delete_repo() {
-	local remote=$(git remote get-url origin)
-	local tmp=${remote#*https://github.com/}
-	local usr_repo=${tmp%.git}
+	# local remote=$(git remote get-url origin)
+	local remote
+	if remote=$(git remote get-url origin 2>/dev/null); then
+		print_info "Origin ada: $remote"
+		local tmp=${remote#*https://github.com/}
+		local usr_repo=${tmp%.git}
 
-	print_info "Target hapus: $usr_repo"
+		print_info "Target hapus: $usr_repo"
 
-	gh repo delete "$usr_repo" --yes
+		gh repo delete "$usr_repo" --yes
+	else
+		print_info "Origin tidak ada"
+	fi
 }
 
 github_automation() {
@@ -160,7 +169,7 @@ github_automation() {
 
 		echo -e "${GREEN}\n  ${BOLD}[1] Public\n  [2] Private${NC}"
 		print_prompt "Visibility repo (default 1): "
-		read CHOICE
+		read -r CHOICE
 		if [[ "$CHOICE" == "2" ]]; then
 			VISIBILITY="--private"
 		else
@@ -179,7 +188,7 @@ github_automation() {
 		echo ""
 
 		print_prompt "Masukkan pesan commit: "
-		read COMMIT
+		read -r COMMIT
 
 		git add -A
 		git branch -M "main"
@@ -196,17 +205,17 @@ github_automation() {
 	fi
 
 	echo ""
-	cd "$ORIGINAL_DIR"
+	cd "$ORIGINAL_DIR" || exit
 }
 
 
-# print_prompt "  [1] buat dan push repo local\n"
-# print_prompt "  [2] hapus repo di github\n"
-# print_prompt "default 1. pilih: "
-# read pilih 
-#
-# if [[ "$pilih" == "2" ]]; then
-# 	delete_repo
-# else
+print_prompt "  [1] buat dan push repo local\n"
+print_prompt "  [2] hapus repo di github\n"
+print_prompt "default 1. pilih: "
+read -r pilih 
+
+if [[ "$pilih" == "2" ]]; then
+	delete_repo
+else
 	github_automation
-# fi
+fi
